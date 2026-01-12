@@ -4,17 +4,15 @@
 
 import json
 import os
-import smtplib
 import schedule
 import time
 from datetime import datetime
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from pathlib import Path
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+import resend
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_community.tools import DuckDuckGoSearchRun
@@ -81,7 +79,6 @@ def collect_news(agent, topics: list, language: str) -> str:
 注意: 検索は1回だけ実行し、その結果からニュースをまとめてください。
 """
         try:
-            # recursion_limitを設定
             config = {"recursion_limit": 10}
             response = agent.invoke({"messages": [("user", prompt)]}, config=config)
             ai_message = response["messages"][-1]
@@ -93,30 +90,25 @@ def collect_news(agent, topics: list, language: str) -> str:
 
 
 def send_email(subject: str, body: str, to_email: str):
-    """メールを送信"""
-    gmail_user = os.getenv("GMAIL_ADDRESS")
-    gmail_password = os.getenv("GMAIL_APP_PASSWORD")
+    """Resendでメールを送信"""
+    api_key = os.getenv("RESEND_API_KEY")
 
-    if not gmail_user or not gmail_password:
-        print("警告: Gmail認証情報が設定されていません")
-        print("  .envファイルに以下を追加してください:")
-        print("  GMAIL_ADDRESS=your-email@gmail.com")
-        print("  GMAIL_APP_PASSWORD=your-app-password")
+    if not api_key:
+        print("警告: RESEND_API_KEYが設定されていません")
+        print("  1. https://resend.com でアカウント作成")
+        print("  2. APIキーを取得")
+        print("  3. .envファイルに追加: RESEND_API_KEY=re_xxxxxxxx")
         return False
 
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = gmail_user
-    msg["To"] = to_email
-
-    # プレーンテキストとHTML両方を添付
-    text_part = MIMEText(body, "plain", "utf-8")
-    msg.attach(text_part)
+    resend.api_key = api_key
 
     try:
-        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
-            server.login(gmail_user, gmail_password)
-            server.sendmail(gmail_user, to_email, msg.as_string())
+        resend.Emails.send({
+            "from": "News Agent <onboarding@resend.dev>",
+            "to": to_email,
+            "subject": subject,
+            "text": body,
+        })
         print(f"[{datetime.now().strftime('%H:%M:%S')}] メール送信完了: {to_email}")
         return True
     except Exception as e:
