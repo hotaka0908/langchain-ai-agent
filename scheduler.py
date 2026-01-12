@@ -64,10 +64,13 @@ def create_news_agent():
 def collect_news(agent, topics: list, language: str) -> str:
     """指定トピックのニュースを収集"""
     results = []
+    today = datetime.now().strftime("%Y年%m月%d日")
 
     for topic in topics:
         prompt = f"""
-「{topic}」について最新ニュースを1回だけ検索してください。
+今日は{today}です。
+「{topic} {today}」で検索して、今日または直近のニュースを取得してください。
+
 検索後、結果を{language}で以下の形式でまとめてください：
 
 ## {topic}
@@ -76,10 +79,12 @@ def collect_news(agent, topics: list, language: str) -> str:
 - **ニュース2**: 概要（1文）
 - **ニュース3**: 概要（1文）
 
-注意: 検索は1回だけ実行し、その結果からニュースをまとめてください。
+注意:
+- 検索は1回だけ実行してください
+- 古いニュース（1週間以上前）は除外してください
 """
         try:
-            config = {"recursion_limit": 10}
+            config = {"recursion_limit": 25}
             response = agent.invoke({"messages": [("user", prompt)]}, config=config)
             ai_message = response["messages"][-1]
             results.append(ai_message.content)
