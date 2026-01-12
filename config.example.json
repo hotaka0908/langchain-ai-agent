@@ -1,0 +1,15 @@
+{
+  "topics": [
+    "日本の主要ニュース",
+    "アメリカの主要ニュース"
+  ],
+  "schedule_times": [
+    "09:00",
+    "18:00"
+  ],
+  "language": "日本語",
+  "email": {
+    "enabled": true,
+    "to": "your-email@example.com"
+  }
+}

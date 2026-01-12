@@ -8,6 +8,10 @@ build/
 
 # Environment
 .env
+config.json
+
+# Generated files
+news_reports/
 
 # IDE
 .vscode/
